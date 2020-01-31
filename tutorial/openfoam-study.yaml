@@ -1,0 +1,68 @@
+description:
+    name: openfoam-parameter-study
+    description: A parameter study that includes initializing, running, post-processing, collecting, and vizualizing runs
+
+env:
+    variables:
+        WORKSPACE_YAMEN: /home/foam
+        OUTPUT_PATH: $(WORKSPACE_YAMEN)/openfoam-study
+        MERLIN_PATH: $(WORKSPACE_YAMEN)/merlin/bin/python
+
+        OPENFOAM_DIR: /opt/openfoam6
+        HEIGHT: 10
+        WIDTH: 10
+        RESOLUTION: 30
+        END_TIME: 20
+        WRITE_INTERVAL: 2
+
+study:
+    - name: run-openfoam-ico
+      description: Runs OpenFOAM using the icoFoam solver
+      run:
+         cmd: |
+            cp -r $(OPENFOAM_DIR)/tutorials/incompressible/icoFoam/cavity/cavity cavity/
+            cd cavity
+
+            echo "***** Setting up mesh *****"
+            $(MERLIN_PATH) $(SPECROOT)/scripts/mesh-param-script.py -x $(WIDTH) -y $(HEIGHT)  -r $(RESOLUTION) -p 0 -scripts_dir $(SPECROOT)/scripts/
+            mv blockMeshDict.txt system/blockMeshDict
+
+            sed -i "30s/.*/writeControl    runTime;/" system/controlDict
+            sed -i "26s/.*/endTime         $(END_TIME);/" system/controlDict
+            sed -i "32s/.*/writeInterval   $(WRITE_INTERVAL);/" system/controlDict
+
+            sed -i "20s/.*/nu              [0 2 -1 0 0 0 0] $(VISCOSITY);/" constant/transportProperties
+            sed -i "26s/.*/        value           uniform ($(LID_SPEED) 0 0);/" 0/U
+            blockMesh
+
+            echo "***** Setting up control parameters ***** "
+            checkMesh > out
+            MIN_AREA=$(grep -oP '(?<=Minimum face area = )[0-9,.,e,-]+' out)
+            echo MIN_AREA "$MIN_AREA"
+            MIN_AREA=${MIN_AREA::-1}
+            echo MIN_AREA $MIN_AREA
+            DELTA_X=$(awk "BEGIN {printf \"%.30f\n\", sqrt($MIN_AREA)}")
+            echo DELTA_X $DELTA_X
+            DELTA_T=$(bc <<<"scale=12; $DELTA_X / $(LID_SPEED)")
+            echo DELTA_T $DELTA_T
+
+            sed -i "28s/.*/deltaT          $DELTA_T;/" system/controlDict
+
+            icoFoam
+            foamToVTK
+      task_queue: simulation_queue
+
+
+merlin:
+    resources:
+        task_server: celery
+        overlap: False
+        workers:
+            all:
+                args: -l INFO --concurrency 10 --prefetch-multiplier 1 -Ofair
+    samples:
+    generate:
+        cmd: python $(SPECROOT)/scripts/make_samples.py -n $(N_SAMPLES) -outfile=$(MERLIN_INFO)/samples -debug $(DEBUG) -re 1 1000 -U 0.1 100 -sample_type $(SAMPLE_TYPE)
+    file: $(MERLIN_INFO)/samples.npy
+    column_labels: [LID_SPEED, VISCOSITY]
+    level_max_dirs: 25

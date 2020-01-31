@@ -1,6 +1,0 @@
-version: '3'
-services:
-  merlin:
-    image: "python:3"
-  openfoam:
-    image: "cfdengine/openfoam:latest"

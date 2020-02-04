@@ -7,13 +7,13 @@ def Round_n_sig_dig(x, n):
     xr = 10. ** xr * np.around(x / 10. ** xr, n - 1)
     return xr
 
-def lognuniform(low=-1, high=3, size=None, base=10):
+def loguniform(low=-1, high=3, size=None, base=10):
     return np.power(base, np.random.uniform(low, high, size))
 
 parser = argparse.ArgumentParser("Generate some samples!")
 parser.add_argument("-n", help="number of samples", default=100, type=int)
 parser.add_argument("-re", help="Reynold's number range (e.g. 1 1000)", nargs='+', type=int)
-parser.add_argument("-U", help="Lidspeed range (e.g. 0.1 100)", nargs='+', type=int)
+parser.add_argument("-U", help="Lidspeed range (e.g. 0.1 100)", nargs='+', type=float)
 parser.add_argument(
     "-sample_type",
     help="type of sampling. options: random, grid. If grid, will try to get close to the correct number of samples",

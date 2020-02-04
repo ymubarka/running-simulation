@@ -12,7 +12,11 @@ env:
         HEIGHT: 10
         WIDTH: 10
         RESOLUTION: 30
-
+        END_TIME: 20
+        WRITE_INTERVAL: 2
+        N_SAMPLES: 3
+        DEBUG: 1
+        SAMPLE_TYPE: 'random'
 study:
     - name: run-openfoam-ico
       description: Runs OpenFOAM using the icoFoam solver
@@ -50,19 +54,6 @@ study:
             foamToVTK
       task_queue: simulation_queue
 
-global.parameters:
-    VISCOSITY:
-        values : [1, 0.4, 0.25, 0.125, 0.1]
-        label  : VISCOSITY_%%
-    LID_SPEED:
-        values : [1, 1, 1, 1, 8]
-        label  : LID_SPEED_%%
-    END_TIME:
-        values : [20, 20, 20, 20, 20]
-        label  : END_TIME_%%
-    WRITE_INTERVAL:
-        values : [2, 2, 2, 2, 2]
-        label  : WRITE_INTERVAL_%%
 
 merlin:
     resources:
@@ -71,3 +62,9 @@ merlin:
         workers:
             all:
                 args: -l INFO --concurrency 10 --prefetch-multiplier 1 -Ofair
+    samples:
+        generate:
+             cmd: $(MERLIN_PATH) $(SPECROOT)/scripts/make-samples.py -n $(N_SAMPLES) -outfile=$(MERLIN_INFO)/samples -debug $(DEBUG) -re 1 1000 -U 0.1 100 -sample_type $(SAMPLE_TYPE)
+        file: $(MERLIN_INFO)/samples.npy
+        column_labels: [LID_SPEED, VISCOSITY]
+        level_max_dirs: 25

@@ -4,55 +4,55 @@ description:
 
 env:
     variables:
-        WORKSPACE_YAMEN: /home/foam
-        OUTPUT_PATH: $(WORKSPACE_YAMEN)/openfoam-study
-        MERLIN_PATH: $(WORKSPACE_YAMEN)/merlin/bin/python
+        WORKSPACE_HOME: /Users/mubarka1/march-tutorial
+        OUTPUT_PATH: $(WORKSPACE_HOME)/running-simulation-output
+        MERLIN_PATH: $(WORKSPACE_HOME)/merlin-venv/bin/python
 
-        OPENFOAM_DIR: /opt/openfoam6
+        CAVITY_DIR: /opt/openfoam6/tutorials/incompressible/icoFoam/cavity/cavity
         HEIGHT: 10
         WIDTH: 10
         RESOLUTION: 30
         END_TIME: 20
         WRITE_INTERVAL: 2
-        N_SAMPLES: 3
+        N_SAMPLES: 10
         DEBUG: 1
         SAMPLE_TYPE: 'random'
+
 study:
+    - name: copy-cavity-directory
+      description: copying the cavity directory from docker container
+      run:
+        cmd: |
+          docker create -ti --name temp-container cfdengine/openfoam bash
+          docker cp temp-container:$(CAVITY_DIR) .
+          docker rm -f temp-container
+        task_queue: simulation_queue
+
     - name: run-openfoam-ico
       description: Runs OpenFOAM using the icoFoam solver
       run:
-         cmd: |
-            cp -r $(OPENFOAM_DIR)/tutorials/incompressible/icoFoam/cavity/cavity cavity/
+        cmd: |
+            cp -r $(copy-cavity-directory.workspace)/cavity cavity/
             cd cavity
 
-            echo "***** Setting up mesh *****"
+            echo "***** Setting Up Mesh *****"
             $(MERLIN_PATH) $(SPECROOT)/scripts/mesh-param-script.py -x $(WIDTH) -y $(HEIGHT)  -r $(RESOLUTION) -p 0 -scripts_dir $(SPECROOT)/scripts/
             mv blockMeshDict.txt system/blockMeshDict
+            sed -i '' "30s/.*/writeControl    runTime;/" system/controlDict
+            sed -i '' "26s/.*/endTime         $(END_TIME);/" system/controlDict
+            sed -i '' "32s/.*/writeInterval   $(WRITE_INTERVAL);/" system/controlDict
+            sed -i '' "18s/.*/nu              [0 2 -1 0 0 0 0] $(VISCOSITY);/" constant/transportProperties
+            sed -i '' "26s/.*/        value           uniform ($(LID_SPEED) 0 0);/" 0/U
+            echo "***** Done Setting Up Mesh *****"
 
-            sed -i "30s/.*/writeControl    runTime;/" system/controlDict
-            sed -i "26s/.*/endTime         $(END_TIME);/" system/controlDict
-            sed -i "32s/.*/writeInterval   $(WRITE_INTERVAL);/" system/controlDict
+            cd ..
+            cp $(SPECROOT)/run-openfoam .
 
-            sed -i "20s/.*/nu              [0 2 -1 0 0 0 0] $(VISCOSITY);/" constant/transportProperties
-            sed -i "26s/.*/        value           uniform ($(LID_SPEED) 0 0);/" 0/U
-            blockMesh
+            docker container run -ti --rm -v $(pwd):/cavity -w /cavity cfdengine/openfoam ./run-openfoam $(LID_SPEED)
 
-            echo "***** Setting up control parameters ***** "
-            checkMesh > out
-            MIN_AREA=$(grep -oP '(?<=Minimum face area = )[0-9,.,e,-]+' out)
-            echo MIN_AREA "$MIN_AREA"
-            MIN_AREA=${MIN_AREA::-1}
-            echo MIN_AREA $MIN_AREA
-            DELTA_X=$(awk "BEGIN {printf \"%.30f\n\", sqrt($MIN_AREA)}")
-            echo DELTA_X $DELTA_X
-            DELTA_T=$(bc <<<"scale=12; $DELTA_X / $(LID_SPEED)")
-            echo DELTA_T $DELTA_T
-
-            sed -i "28s/.*/deltaT          $DELTA_T;/" system/controlDict
-
-            icoFoam
-            foamToVTK
-      task_queue: simulation_queue
+            echo 'done'
+        task_queue: simulation_queue
+        depends: [copy-cavity-directory]
 
 
 merlin:

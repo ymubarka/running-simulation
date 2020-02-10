@@ -63,6 +63,10 @@ do
 
   $(getApplication)
 
+  postProcess -func 'vorticity'
+
+  postProcess -func 'enstrophy'
+
   foamToVTK
 done
 

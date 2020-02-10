@@ -12,9 +12,9 @@ env:
         HEIGHT: 10
         WIDTH: 10
         RESOLUTION: 30
-        END_TIME: 20
-        WRITE_INTERVAL: 2
-        N_SAMPLES: 10
+        END_TIME: 1
+        WRITE_INTERVAL: 0.1
+        N_SAMPLES: 100
         DEBUG: 1
         SAMPLE_TYPE: 'random'
 
@@ -53,6 +53,16 @@ study:
             echo 'done'
         task_queue: simulation_queue
         depends: [copy-cavity-directory]
+
+    - name: combine-outputs
+      description: Combine the outputs of the previous step
+      run:
+        cmd: |
+            echo $(MERLIN_PATHS_ALL)
+            echo $(MERLIN_PATHS_ALL) > out
+            echo $(run-openfoam-ico.workspace)
+        task_queue: simulation_queue
+        depends: [run-openfoam-ico*]
 
 
 merlin:

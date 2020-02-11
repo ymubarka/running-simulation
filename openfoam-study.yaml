@@ -6,7 +6,7 @@ env:
     variables:
         WORKSPACE_HOME: /Users/mubarka1/march-tutorial
         OUTPUT_PATH: $(WORKSPACE_HOME)/running-simulation-output
-        MERLIN_PATH: $(WORKSPACE_HOME)/merlin-venv/bin/python
+        MERLIN_PATH: $(WORKSPACE_HOME)/merlin-venv/bin
 
         CAVITY_DIR: /opt/openfoam6/tutorials/incompressible/icoFoam/cavity/cavity
         HEIGHT: 10
@@ -14,19 +14,26 @@ env:
         RESOLUTION: 30
         END_TIME: 1
         WRITE_INTERVAL: 0.1
-        N_SAMPLES: 100
+        N_SAMPLES: 20
         DEBUG: 1
         SAMPLE_TYPE: 'random'
 
 study:
+    - name: install-packages
+      description: Installing necessary python packages
+      run:
+        cmd: |
+            $(MERLIN_PATH)/pip install -r $(SPECROOT)/requirements.txt
+
     - name: copy-cavity-directory
       description: copying the cavity directory from docker container
       run:
         cmd: |
-          docker create -ti --name temp-container cfdengine/openfoam bash
-          docker cp temp-container:$(CAVITY_DIR) .
-          docker rm -f temp-container
+            docker create -ti --name temp-container cfdengine/openfoam bash
+            docker cp temp-container:$(CAVITY_DIR) .
+            docker rm -f temp-container
         task_queue: simulation_queue
+        depends: [install-packages]
 
     - name: run-openfoam-ico
       description: Runs OpenFOAM using the icoFoam solver
@@ -36,7 +43,7 @@ study:
             cd cavity
 
             echo "***** Setting Up Mesh *****"
-            $(MERLIN_PATH) $(SPECROOT)/scripts/mesh-param-script.py -x $(WIDTH) -y $(HEIGHT)  -r $(RESOLUTION) -p 0 -scripts_dir $(SPECROOT)/scripts/
+            $(MERLIN_PATH)/python $(SPECROOT)/scripts/mesh-param-script.py -x $(WIDTH) -y $(HEIGHT)  -r $(RESOLUTION) -p 0 -scripts_dir $(SPECROOT)/scripts/
             mv blockMeshDict.txt system/blockMeshDict
             sed -i '' "30s/.*/writeControl    runTime;/" system/controlDict
             sed -i '' "26s/.*/endTime         $(END_TIME);/" system/controlDict
@@ -65,6 +72,7 @@ study:
         depends: [run-openfoam-ico*]
 
 
+
 merlin:
     resources:
         task_server: celery
@@ -74,7 +82,7 @@ merlin:
                 args: -l INFO --concurrency 10 --prefetch-multiplier 1 -Ofair
     samples:
         generate:
-             cmd: $(MERLIN_PATH) $(SPECROOT)/scripts/make-samples.py -n $(N_SAMPLES) -outfile=$(MERLIN_INFO)/samples -debug $(DEBUG) -re 1 1000 -U 0.1 100 -sample_type $(SAMPLE_TYPE)
+             cmd: $(MERLIN_PATH)/python $(SPECROOT)/scripts/make-samples.py -n $(N_SAMPLES) -outfile=$(MERLIN_INFO)/samples -debug $(DEBUG) -re 1 1000 -U 0.1 100 -sample_type $(SAMPLE_TYPE)
         file: $(MERLIN_INFO)/samples.npy
         column_labels: [LID_SPEED, VISCOSITY]
         level_max_dirs: 25

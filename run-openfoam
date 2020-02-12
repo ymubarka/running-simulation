@@ -1,5 +1,6 @@
 #!/bin/bash
 
+sudo apt-get install bc
 # Source OpenFOAM BASH profile
 . /opt/openfoam6/etc/bashrc
 
@@ -17,22 +18,27 @@ for caseName in $cavityCases
 do
   cd $caseName
 
-  blockMesh
+  blockMesh > blockMesh.out
 
   echo "***** Setting up control parameters ***** "
   checkMesh > out
   MIN_AREA=$(grep -oP '(?<=Minimum face area = )[0-9,.,e,-]+' out)
-  echo MIN_AREA "$MIN_AREA"
+  echo MIN_AREA "$MIN_AREA" >> out
   MIN_AREA=${MIN_AREA::-1}
-  echo MIN_AREA $MIN_AREA
+  echo MIN_AREA $MIN_AREA >> out
   DELTA_X=$(awk "BEGIN {printf \"%.30f\n\", sqrt($MIN_AREA)}")
-  echo DELTA_X $DELTA_X
+  echo DELTA_X $DELTA_X >> out
   DELTA_T=$(awk "BEGIN {printf \"%.30f\n\", $DELTA_X / $LID_SPEED}")
-  echo DELTA_T $DELTA_T
-  sed -i '' "28s/.*/deltaT          $DELTA_T;/" system/controlDict
+  echo DELTA_T $DELTA_T >> out
+
+  MIN_DELTA_T=0.005
+  DELTA_T=$(echo ${DELTA_T} ${MIN_DELTA_T} | awk '{if ($1 < $2) print $1; else print $2}')
+
+  echo 'DELTA_T after comparison' $DELTA_T>> out
+  sed -i "28s/.*/deltaT          $DELTA_T;/" system/controlDict
 
   echo "Running $(getApplication)"
-  $(getApplication)
+  $(getApplication) > $(getApplication).out
   postProcess -func 'vorticity'
   postProcess -func 'enstrophy'
   foamToVTK

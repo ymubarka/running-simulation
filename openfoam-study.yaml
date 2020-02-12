@@ -14,7 +14,7 @@ env:
         RESOLUTION: 30
         END_TIME: 1
         WRITE_INTERVAL: 0.1
-        N_SAMPLES: 20
+        N_SAMPLES: 100
         DEBUG: 1
         SAMPLE_TYPE: 'random'
 
@@ -55,7 +55,9 @@ study:
             cd ..
             cp $(SPECROOT)/run-openfoam .
 
-            docker container run -ti --rm -v $(pwd):/cavity -w /cavity cfdengine/openfoam ./run-openfoam $(LID_SPEED)
+            CONTAINER_NAME='OPENFOAM_ICO_$(MERLIN_SAMPLE_ID)'
+            docker container run -ti --rm -v $(pwd):/cavity -w /cavity --name=${CONTAINER_NAME} cfdengine/openfoam ./run-openfoam $(LID_SPEED)
+            docker wait ${CONTAINER_NAME}
 
             echo 'done'
         task_queue: simulation_queue
@@ -70,7 +72,7 @@ study:
 
             $(MERLIN_PATH)/python $(SPECROOT)/scripts/combine-outputs.py -data $(run-openfoam-ico.workspace)
         task_queue: simulation_queue
-        depends: [run-openfoam-ico*]
+        depends: [run-openfoam-ico_*]
 
 
 

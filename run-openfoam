@@ -1,6 +1,5 @@
 #!/bin/bash
 
-sudo apt-get install bc
 # Source OpenFOAM BASH profile
 . /opt/openfoam6/etc/bashrc
 
@@ -31,7 +30,7 @@ do
   DELTA_T=$(awk "BEGIN {printf \"%.30f\n\", $DELTA_X / $LID_SPEED}")
   echo DELTA_T $DELTA_T >> out
 
-  MIN_DELTA_T=0.005
+  MIN_DELTA_T=0.05
   DELTA_T=$(echo ${DELTA_T} ${MIN_DELTA_T} | awk '{if ($1 < $2) print $1; else print $2}')
 
   echo 'DELTA_T after comparison' $DELTA_T>> out

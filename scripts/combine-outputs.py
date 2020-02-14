@@ -44,8 +44,8 @@ for i, dir_name in enumerate(dir_names):
         enstrophy.append(Ofpp.parse_internal_field(name))
 
 resolution = np.array(enstrophy).shape[-1]
-U = np.array(U).reshape(num_of_timesteps, len(dir_names), resolution, 3)
-vorticity = np.array(vorticity).reshape(num_of_timesteps, len(dir_names), resolution, 3)
-enstrophy = np.array(enstrophy).reshape(num_of_timesteps, len(dir_names), resolution)/float(resolution)
+U = np.array(U).reshape(len(dir_names), num_of_timesteps, resolution, 3)
+vorticity = np.array(vorticity).reshape(len(dir_names), num_of_timesteps, resolution, 3)
+enstrophy = np.array(enstrophy).reshape(len(dir_names), num_of_timesteps, resolution)/float(resolution)
 
 np.savez('data.npz', U, vorticity, enstrophy)

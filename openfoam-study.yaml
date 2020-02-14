@@ -12,10 +12,10 @@ env:
         HEIGHT: 10
         WIDTH: 10
         RESOLUTION: 30
-        END_TIME: 1
-        WRITE_INTERVAL: 0.1
+        END_TIME: 10
+        WRITE_INTERVAL: 1
         N_SAMPLES: 100
-        DEBUG: 1
+        DEBUG: 0
         SAMPLE_TYPE: 'random'
 
 study:
@@ -82,7 +82,7 @@ merlin:
         overlap: False
         workers:
             all:
-                args: -l INFO --concurrency 10 --prefetch-multiplier 1 -Ofair
+                args: -l INFO --concurrency 10 --prefetch-multiplier 10 -Ofair
     samples:
         generate:
              cmd: $(MERLIN_PATH)/python $(SPECROOT)/scripts/make-samples.py -n $(N_SAMPLES) -outfile=$(MERLIN_INFO)/samples -debug $(DEBUG) -re 1 1000 -U 0.1 100 -sample_type $(SAMPLE_TYPE)

@@ -1,13 +1,21 @@
 # running-simulation
 Pre-reqs:
 1. Docker
-  a. openfoam
-  b. redis
+```bash
+  docker pull cfdengine/openfoam
+  docker pull redis
+```
 2. Merlin
 
 Steps:
 1. Set up a redis server using docker
-2. Activate virtual environment with merlin in it
-3. clone this repo
-4. merlin run openfoam-study.yaml
-5. merlin run-workers openfoam-study.yaml
+```bash
+  docker run --detach --name my-redis -p 6379:6379 redis
+```
+2. Clone this repo into work directory
+3. Run the YAML script
+```bash
+  cd running-simulation
+  merlin run openfoam-study.yaml
+  merlin run openfoam-study.yaml
+```

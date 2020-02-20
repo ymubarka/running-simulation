@@ -4,56 +4,82 @@ description:
 
 env:
     variables:
-        WORKSPACE_YAMEN: /home/foam
-        OUTPUT_PATH: $(WORKSPACE_YAMEN)/openfoam-study
-        MERLIN_PATH: $(WORKSPACE_YAMEN)/merlin/bin/python
+        WORKSPACE_HOME: /Users/mubarka1/march-tutorial
+        OUTPUT_PATH: $(WORKSPACE_HOME)/running-simulation-output
+        MERLIN_PATH: $(WORKSPACE_HOME)/merlin-venv/bin
 
-        OPENFOAM_DIR: /opt/openfoam6
+        CAVITY_DIR: /opt/openfoam6/tutorials/incompressible/icoFoam/cavity/cavity
         HEIGHT: 10
         WIDTH: 10
         RESOLUTION: 30
-        END_TIME: 20
-        WRITE_INTERVAL: 2
-        N_SAMPLES: 3
-        DEBUG: 1
+        END_TIME: 10
+        WRITE_INTERVAL: 1
+        N_SAMPLES: 4
+        DEBUG: 0
         SAMPLE_TYPE: 'random'
+
 study:
+    - name: install-packages
+      description: Installing necessary python packages
+      run:
+        cmd: |
+            $(MERLIN_PATH)/pip install -r $(SPECROOT)/requirements.txt
+
+            rm ~/.merlin/app.yaml
+            cp $(SPECROOT)/app.yaml ~/.merlin/app.yaml
+        task_queue: simulation_queue
+
+    - name: copy-cavity
+      description: Copying the cavity directory from docker container
+      run:
+        cmd: |
+            docker create -ti --name temp-container cfdengine/openfoam bash
+            docker cp temp-container:$(CAVITY_DIR) .
+            docker rm -f temp-container
+        task_queue: simulation_queue
+        depends: [install-packages]
+
     - name: run-openfoam-ico
       description: Runs OpenFOAM using the icoFoam solver
       run:
-         cmd: |
-            cp -r $(OPENFOAM_DIR)/tutorials/incompressible/icoFoam/cavity/cavity cavity/
+        cmd: |
+            cp -r $(copy-cavity.workspace)/cavity cavity/
             cd cavity
 
-            echo "***** Setting up mesh *****"
-            $(MERLIN_PATH) $(SPECROOT)/scripts/mesh-param-script.py -x $(WIDTH) -y $(HEIGHT)  -r $(RESOLUTION) -p 0 -scripts_dir $(SPECROOT)/scripts/
+            echo "***** Setting Up Mesh *****"
+            $(MERLIN_PATH)/python $(SPECROOT)/scripts/mesh-param-script.py -x $(WIDTH) -y $(HEIGHT)  -r $(RESOLUTION) -p 0 -scripts_dir $(SPECROOT)/scripts/
             mv blockMeshDict.txt system/blockMeshDict
+            sed -i '' "30s/.*/writeControl    runTime;/" system/controlDict
+            sed -i '' "26s/.*/endTime         $(END_TIME);/" system/controlDict
+            sed -i '' "32s/.*/writeInterval   $(WRITE_INTERVAL);/" system/controlDict
+            sed -i '' "18s/.*/nu              [0 2 -1 0 0 0 0] $(VISCOSITY);/" constant/transportProperties
+            sed -i '' "26s/.*/        value           uniform ($(LID_SPEED) 0 0);/" 0/U
+            echo "***** Done Setting Up Mesh *****"
 
-            sed -i "30s/.*/writeControl    runTime;/" system/controlDict
-            sed -i "26s/.*/endTime         $(END_TIME);/" system/controlDict
-            sed -i "32s/.*/writeInterval   $(WRITE_INTERVAL);/" system/controlDict
+            cd ..
+            cp $(SPECROOT)/run-openfoam .
 
-            sed -i "20s/.*/nu              [0 2 -1 0 0 0 0] $(VISCOSITY);/" constant/transportProperties
-            sed -i "26s/.*/        value           uniform ($(LID_SPEED) 0 0);/" 0/U
-            blockMesh
+            CONTAINER_NAME='OPENFOAM_ICO_$(MERLIN_SAMPLE_ID)'
+            docker container run -ti --rm -v $(pwd):/cavity -w /cavity --name=${CONTAINER_NAME} cfdengine/openfoam ./run-openfoam $(LID_SPEED)
+            docker wait ${CONTAINER_NAME}
+        task_queue: simulation_queue
+        depends: [copy-cavity]
 
-            echo "***** Setting up control parameters ***** "
-            checkMesh > out
-            MIN_AREA=$(grep -oP '(?<=Minimum face area = )[0-9,.,e,-]+' out)
-            echo MIN_AREA "$MIN_AREA"
-            MIN_AREA=${MIN_AREA::-1}
-            echo MIN_AREA $MIN_AREA
-            DELTA_X=$(awk "BEGIN {printf \"%.30f\n\", sqrt($MIN_AREA)}")
-            echo DELTA_X $DELTA_X
-            DELTA_T=$(bc <<<"scale=12; $DELTA_X / $(LID_SPEED)")
-            echo DELTA_T $DELTA_T
+    - name: combine-outputs
+      description: Combine the outputs of the previous step
+      run:
+        cmd: |
+            $(MERLIN_PATH)/python $(SPECROOT)/scripts/combine-outputs.py -data $(run-openfoam-ico.workspace) -merlin_paths $(MERLIN_PATHS_ALL)
+        task_queue: simulation_queue
+        depends: [run-openfoam-ico_*]
 
-            sed -i "28s/.*/deltaT          $DELTA_T;/" system/controlDict
-
-            icoFoam
-            foamToVTK
-      task_queue: simulation_queue
-
+    - name: learn
+      description: Learning the output of the openfoam simulations using input parameters
+      run:
+        cmd: |
+            $(MERLIN_PATH)/python $(SPECROOT)/scripts/learn.py -specroot $(MERLIN_WORKSPACE)
+        task_queue: simulation_queue
+        depends: [combine-outputs]
 
 merlin:
     resources:
@@ -61,10 +87,10 @@ merlin:
         overlap: False
         workers:
             all:
-                args: -l INFO --concurrency 10 --prefetch-multiplier 1 -Ofair
+                args: -l INFO --concurrency 4 --prefetch-multiplier 1 -Ofair
     samples:
         generate:
-             cmd: $(MERLIN_PATH) $(SPECROOT)/scripts/make-samples.py -n $(N_SAMPLES) -outfile=$(MERLIN_INFO)/samples -debug $(DEBUG) -re 1 1000 -U 0.1 100 -sample_type $(SAMPLE_TYPE)
+             cmd: $(MERLIN_PATH)/python $(SPECROOT)/scripts/make-samples.py -n $(N_SAMPLES) -outfile=$(MERLIN_INFO)/samples -debug $(DEBUG) -re 1 100 -U 0.1 100 -sample_type $(SAMPLE_TYPE)
         file: $(MERLIN_INFO)/samples.npy
         column_labels: [LID_SPEED, VISCOSITY]
         level_max_dirs: 25

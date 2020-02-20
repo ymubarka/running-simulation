@@ -1,5 +1,5 @@
 celery:
-    certs: /usr/workspace/wsb/icfsi/merlin/config
+    certs:
 
 broker:
     name: redis

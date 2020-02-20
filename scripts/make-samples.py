@@ -17,7 +17,8 @@ parser.add_argument("-U", help="Lidspeed range (e.g. 0.1 100)", nargs='+', type=
 parser.add_argument(
     "-sample_type",
     help="type of sampling. options: random, grid. If grid, will try to get close to the correct number of samples",
-    default="random")
+    default="log_random")
+parser.add_argument("-b", help="the base for log random sampling", default=10, type=int)
 parser.add_argument("-outfile", help="name of output .npy file", default="samples")
 parser.add_argument("-debug", help="is this a debugging run?", default=1, type=int)
 
@@ -27,13 +28,21 @@ N_SAMPLES = 3 if args.debug else args.n
 SAMPLE_TYPE = args.sample_type
 REYNOLD_RANGE = args.re
 LIDSPEED_RANGE = args.U
+BASE = args.b
 
-if SAMPLE_TYPE == "random":
+if SAMPLE_TYPE == "log_random":
     x = np.empty((N_SAMPLES, 2))
-    x[:,0] = loguniform(low = np.log10(LIDSPEED_RANGE[0]), high = np.log10(LIDSPEED_RANGE[1]), size = N_SAMPLES)
+    x[:,0] = loguniform(low = np.log10(LIDSPEED_RANGE[0]), high = np.log10(LIDSPEED_RANGE[1]), size = N_SAMPLES, base=BASE)
     vi_low = np.log10(x[:,0]/REYNOLD_RANGE[0])
     vi_high = np.log10(x[:,0]/REYNOLD_RANGE[1])
-    x[:,1] = [loguniform(low = vi_low[i], high = vi_high[i]) for i in range(N_SAMPLES)]
+    x[:,1] = [loguniform(low = vi_low[i], high = vi_high[i], base=BASE) for i in range(N_SAMPLES)]
+
+elif SAMPLE_TYPE == "random":
+    x = np.empty((N_SAMPLES, 2))
+    x[:,0] = np.random.uniform(LIDSPEED_RANGE[0], LIDSPEED_RANGE[1], size = N_SAMPLES)
+    vi_low = np.log10(x[:,0]/REYNOLD_RANGE[1])
+    vi_high = np.log10(x[:,0]/REYNOLD_RANGE[0])
+    x[:,1] = [loguniform(low = vi_low[i], high = vi_high[i], base=BASE) for i in range(N_SAMPLES)]
 
 elif SAMPLE_TYPE == "fixed":
     num_samples = 3

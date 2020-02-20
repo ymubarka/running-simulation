@@ -7,16 +7,13 @@ descript = """Using parameters to edit OpenFOAM parameters"""
 parser = argparse.ArgumentParser(description=descript)
 
 parser.add_argument('-data', '--data_dir', help='The home directory of the data directories')
+parser.add_argument('-merlin_paths', nargs='+', help='The path of all merlin runs')
 
 args = parser.parse_args()
 
 DATA_DIR = args.data_dir
 
-dirs_array = open("out","r")
-x = dirs_array.read()
-x = x.split(' ')
-x[-1] = x[-1][:-1]
-
+x = args.merlin_paths
 dir_names = [DATA_DIR + '/' + xi + '/cavity' for xi in x]
 
 num_of_timesteps = 10

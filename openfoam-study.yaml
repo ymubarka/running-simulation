@@ -14,7 +14,7 @@ env:
         RESOLUTION: 30
         END_TIME: 10
         WRITE_INTERVAL: 1
-        N_SAMPLES: 10
+        N_SAMPLES: 4
         DEBUG: 0
         SAMPLE_TYPE: 'random'
 
@@ -29,7 +29,7 @@ study:
             cp $(SPECROOT)/app.yaml ~/.merlin/app.yaml
         task_queue: simulation_queue
 
-    - name: copy-cavity-directory
+    - name: copy-cavity
       description: Copying the cavity directory from docker container
       run:
         cmd: |
@@ -43,7 +43,7 @@ study:
       description: Runs OpenFOAM using the icoFoam solver
       run:
         cmd: |
-            cp -r $(copy-cavity-directory.workspace)/cavity cavity/
+            cp -r $(copy-cavity.workspace)/cavity cavity/
             cd cavity
 
             echo "***** Setting Up Mesh *****"
@@ -62,19 +62,14 @@ study:
             CONTAINER_NAME='OPENFOAM_ICO_$(MERLIN_SAMPLE_ID)'
             docker container run -ti --rm -v $(pwd):/cavity -w /cavity --name=${CONTAINER_NAME} cfdengine/openfoam ./run-openfoam $(LID_SPEED)
             docker wait ${CONTAINER_NAME}
-
-            echo 'done'
         task_queue: simulation_queue
-        depends: [copy-cavity-directory]
+        depends: [copy-cavity]
 
     - name: combine-outputs
       description: Combine the outputs of the previous step
       run:
         cmd: |
-            echo $(MERLIN_PATHS_ALL) > out
-            echo $(run-openfoam-ico.workspace)
-
-            $(MERLIN_PATH)/python $(SPECROOT)/scripts/combine-outputs.py -data $(run-openfoam-ico.workspace)
+            $(MERLIN_PATH)/python $(SPECROOT)/scripts/combine-outputs.py -data $(run-openfoam-ico.workspace) -merlin_paths $(MERLIN_PATHS_ALL)
         task_queue: simulation_queue
         depends: [run-openfoam-ico_*]
 
@@ -92,7 +87,7 @@ merlin:
         overlap: False
         workers:
             all:
-                args: -l INFO --concurrency 10 --prefetch-multiplier 1 -Ofair
+                args: -l INFO --concurrency 4 --prefetch-multiplier 1 -Ofair
     samples:
         generate:
              cmd: $(MERLIN_PATH)/python $(SPECROOT)/scripts/make-samples.py -n $(N_SAMPLES) -outfile=$(MERLIN_INFO)/samples -debug $(DEBUG) -re 1 100 -U 0.1 100 -sample_type $(SAMPLE_TYPE)

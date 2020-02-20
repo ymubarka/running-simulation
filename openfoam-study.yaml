@@ -27,9 +27,10 @@ study:
 
             rm ~/.merlin/app.yaml
             cp $(SPECROOT)/app.yaml ~/.merlin/app.yaml
+        task_queue: simulation_queue
 
     - name: copy-cavity-directory
-      description: copying the cavity directory from docker container
+      description: Copying the cavity directory from docker container
       run:
         cmd: |
             docker create -ti --name temp-container cfdengine/openfoam bash
@@ -85,18 +86,16 @@ study:
         task_queue: simulation_queue
         depends: [combine-outputs]
 
-
-
 merlin:
     resources:
         task_server: celery
         overlap: False
         workers:
             all:
-                args: -l INFO --concurrency 10 --prefetch-multiplier 10 -Ofair
+                args: -l INFO --concurrency 10 --prefetch-multiplier 1 -Ofair
     samples:
         generate:
-             cmd: $(MERLIN_PATH)/python $(SPECROOT)/scripts/make-samples.py -n $(N_SAMPLES) -outfile=$(MERLIN_INFO)/samples -debug $(DEBUG) -re 1 1000 -U 0.1 100 -sample_type $(SAMPLE_TYPE)
+             cmd: $(MERLIN_PATH)/python $(SPECROOT)/scripts/make-samples.py -n $(N_SAMPLES) -outfile=$(MERLIN_INFO)/samples -debug $(DEBUG) -re 1 100 -U 0.1 100 -sample_type $(SAMPLE_TYPE)
         file: $(MERLIN_INFO)/samples.npy
         column_labels: [LID_SPEED, VISCOSITY]
         level_max_dirs: 25

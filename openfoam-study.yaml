@@ -14,7 +14,7 @@ env:
         RESOLUTION: 30
         END_TIME: 10
         WRITE_INTERVAL: 1
-        N_SAMPLES: 100
+        N_SAMPLES: 10
         DEBUG: 0
         SAMPLE_TYPE: 'random'
 
@@ -24,6 +24,9 @@ study:
       run:
         cmd: |
             $(MERLIN_PATH)/pip install -r $(SPECROOT)/requirements.txt
+
+            rm ~/.merlin/app.yaml
+            cp $(SPECROOT)/app.yaml ~/.merlin/app.yaml
 
     - name: copy-cavity-directory
       description: copying the cavity directory from docker container
@@ -73,6 +76,14 @@ study:
             $(MERLIN_PATH)/python $(SPECROOT)/scripts/combine-outputs.py -data $(run-openfoam-ico.workspace)
         task_queue: simulation_queue
         depends: [run-openfoam-ico_*]
+
+    - name: learn
+      description: Learning the output of the openfoam simulations using input parameters
+      run:
+        cmd: |
+            $(MERLIN_PATH)/python $(SPECROOT)/scripts/learn.py -specroot $(MERLIN_WORKSPACE)
+        task_queue: simulation_queue
+        depends: [combine-outputs]
 
 
 

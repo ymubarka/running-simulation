@@ -19,8 +19,8 @@ study:
         cmd: |
             $(MERLIN_PATH)/pip install -r $(SPECROOT)/requirements.txt
 
-            rm ~/.merlin/app.yaml
-            cp $(SPECROOT)/app.yaml ~/.merlin/app.yaml
+            #rm ~/.merlin/app.yaml
+            #cp $(SPECROOT)/app.yaml ~/.merlin/app.yaml
         task_queue: simulation_queue
 
     - name: copy-cavity
@@ -75,7 +75,7 @@ merlin:
                 args: -l INFO --concurrency 4 --prefetch-multiplier 1 -Ofair
     samples:
         generate:
-             cmd: $(MERLIN_PATH)/python $(SPECROOT)/scripts/make-samples.py -n $(N_SAMPLES) -outfile=$(MERLIN_INFO)/samples -re 1 100 -U 0.1 100
+             cmd: $(MERLIN_PATH)/python $(SPECROOT)/scripts/make-samples.py -n $(N_SAMPLES) -outfile=$(MERLIN_INFO)/samples
         file: $(MERLIN_INFO)/samples.npy
         column_labels: [LID_SPEED, VISCOSITY]
         level_max_dirs: 25

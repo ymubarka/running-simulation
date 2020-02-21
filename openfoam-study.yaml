@@ -75,7 +75,7 @@ merlin:
                 args: -l INFO --concurrency 4 --prefetch-multiplier 1 -Ofair
     samples:
         generate:
-             cmd: $(MERLIN_PATH)/python $(SPECROOT)/scripts/make-samples.py -n $(N_SAMPLES) -outfile=$(MERLIN_INFO)/samples -re 1 100 -U 0.1 100 -sample_type $(SAMPLE_TYPE)
+             cmd: $(MERLIN_PATH)/python $(SPECROOT)/scripts/make-samples.py -n $(N_SAMPLES) -outfile=$(MERLIN_INFO)/samples -re 1 100 -U 0.1 100
         file: $(MERLIN_INFO)/samples.npy
         column_labels: [LID_SPEED, VISCOSITY]
         level_max_dirs: 25

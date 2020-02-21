@@ -53,7 +53,7 @@ fig, ax = plt.subplots(1, 2, figsize=(25, 12))
 plt.rcParams.update({'font.size': 12})
 plt.rcParams['lines.linewidth'] = 5
 
-ax[0].scatter(y_train[:,0], y_train[:,1], label='Actual')
+ax[0].scatter(y_train[:,0], y_train[:,1], s=100, label='Actual')
 y_pred = regr.predict(X_train)
 ax[0].scatter(y_pred[:,0], y_pred[:,1], label='Predicted')
 ax[0].set_title('Velocity Magnitude %s'%timestep)
@@ -69,7 +69,7 @@ y_min = np.min([np.min(y_train[:,1]), np.min(y_pred[:,1])])
 x_max = np.max([np.max(y_train[:,0]), np.max(y_pred[:,0])])
 y_max = np.max([np.max(y_train[:,1]), np.max(y_pred[:,1])])
 
-ax[1].scatter(y_test[:,0], y_test[:,1], label='Actual')
+ax[1].scatter(y_test[:,0], y_test[:,1], s=100, label='Actual')
 
 y_pred = regr.predict(X_test)
 ax[1].scatter(y_pred[:,0], y_pred[:,1], label='Predicted')

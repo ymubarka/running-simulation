@@ -20,11 +20,10 @@ parser.add_argument(
     default="log_random")
 parser.add_argument("-b", help="the base for log random sampling", default=10, type=int)
 parser.add_argument("-outfile", help="name of output .npy file", default="samples")
-parser.add_argument("-debug", help="is this a debugging run?", default=1, type=int)
 
 args = parser.parse_args()
 
-N_SAMPLES = 3 if args.debug else args.n
+N_SAMPLES = args.n
 SAMPLE_TYPE = args.sample_type
 REYNOLD_RANGE = args.re
 LIDSPEED_RANGE = args.U

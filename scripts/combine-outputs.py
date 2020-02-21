@@ -12,9 +12,9 @@ parser.add_argument('-merlin_paths', nargs='+', help='The path of all merlin run
 args = parser.parse_args()
 
 DATA_DIR = args.data_dir
+X = args.merlin_paths
 
-x = args.merlin_paths
-dir_names = [DATA_DIR + '/' + xi + '/cavity' for xi in x]
+dir_names = [DATA_DIR + '/' + Xi + '/cavity' for Xi in X]
 
 num_of_timesteps = 10
 vorticity = []
@@ -28,7 +28,6 @@ for i, dir_name in enumerate(dir_names):
             continue
         physical_times.append(round(float(name.split('/')[-2]), 2))
         vorticity.append(Ofpp.parse_internal_field(name))
-
 
     for name in glob.glob(dir_name + '/[0-9]*/U'):
         if name[-4:]== '/0/U':

@@ -12,10 +12,14 @@ cd ${0%/*} || exit 1    # Run from this directory
 
 cavityCases="cavity"
 LID_SPEED=$1
+VISCOSITY=$2
 
 for caseName in $cavityCases
 do
   cd $caseName
+
+  sed -i '' "18s/.*/nu              [0 2 -1 0 0 0 0] $VISCOSITY;/" constant/transportProperties
+  sed -i '' "26s/.*/        value           uniform ($LID_SPEED 0 0);/" 0/U
 
   blockMesh > blockMesh.out
 

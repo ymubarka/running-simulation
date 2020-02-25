@@ -5,7 +5,12 @@ Pre-reqs:
   docker pull cfdengine/openfoam
   docker pull redis
 ```
-2. Merlin
+2. Virtual-env
+```Ofpp==0.11
+  merlinwf==1.1.1
+  scikit-learn==0.21.3
+  matplotlib==3.1.1
+```
 
 Steps:
 1. Set up a redis server using docker

@@ -6,7 +6,8 @@ Pre-reqs:
   docker pull redis
 ```
 2. Virtual-env
-```Ofpp==0.11
+```
+  Ofpp==0.11
   merlinwf==1.1.1
   scikit-learn==0.21.3
   matplotlib==3.1.1

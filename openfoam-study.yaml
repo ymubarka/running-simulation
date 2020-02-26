@@ -6,30 +6,33 @@ env:
     variables:
         WORKSPACE_HOME: /Users/mubarka1/march-tutorial
         OUTPUT_PATH: $(WORKSPACE_HOME)/running-simulation-output
-        MERLIN_PATH: $(WORKSPACE_HOME)/merlin-venv/bin
+        MERLIN_PATH: $(WORKSPACE_HOME)/merlin_venv/bin
 
-        N_SAMPLES: 100
+        N_SAMPLES: 10
         DEBUG: 0
         SAMPLE_TYPE: 'random'
 
 study:
-    - name: install-packages
-      description: Installing necessary python packages
+    - name: setup
+      description: |
+                Installing necessary python packages and copying files from SPECROOT
+                to the merlin info directory
       run:
         cmd: |
             $(MERLIN_PATH)/pip install -r $(SPECROOT)/requirements.txt
 
-            rm ~/.merlin/app.yaml
-            cp $(SPECROOT)/app.yaml ~/.merlin/app.yaml
+            mkdir $(MERLIN_INFO)/running_yaml
+            cp $(MERLIN_INFO)/*.yaml $(MERLIN_INFO)/running_yaml
+            cp -r $(SPECROOT)/* $(MERLIN_INFO)/
         task_queue: simulation_queue
 
     - name: copy-cavity
       description: Copying the cavity directory from docker container
       run:
         cmd: |
-            source $(SPECROOT)/scripts/cavity-setup.sh $(MERLIN_PATH) $(SPECROOT)
+            source $(MERLIN_INFO)/scripts/cavity-setup.sh $(MERLIN_PATH) $(MERLIN_INFO)
         task_queue: simulation_queue
-        depends: [install-packages]
+        depends: [setup]
 
     - name: run-openfoam-ico
       description: Runs OpenFOAM using the icoFoam solver
@@ -42,7 +45,7 @@ study:
             sed -i '' "26s/.*/        value           uniform ($(LID_SPEED) 0 0);/" 0/U
 
             cd ..
-            cp $(SPECROOT)/scripts/run-openfoam .
+            cp $(MERLIN_INFO)/scripts/run-openfoam .
 
             CONTAINER_NAME='OPENFOAM_ICO_$(MERLIN_SAMPLE_ID)'
             docker container run -ti --rm -v $(pwd):/cavity -w /cavity --name=${CONTAINER_NAME} cfdengine/openfoam ./run-openfoam $(LID_SPEED)
@@ -54,7 +57,7 @@ study:
       description: Combine the outputs of the previous step
       run:
         cmd: |
-            $(MERLIN_PATH)/python $(SPECROOT)/scripts/combine-outputs.py -data $(run-openfoam-ico.workspace) -merlin_paths $(MERLIN_PATHS_ALL)
+            $(MERLIN_PATH)/python $(MERLIN_INFO)/scripts/combine-outputs.py -data $(run-openfoam-ico.workspace) -merlin_paths $(MERLIN_PATHS_ALL)
         task_queue: simulation_queue
         depends: [run-openfoam-ico_*]
 
@@ -62,7 +65,7 @@ study:
       description: Learning the output of the openfoam simulations using input parameters
       run:
         cmd: |
-            $(MERLIN_PATH)/python $(SPECROOT)/scripts/learn.py -specroot $(MERLIN_WORKSPACE)
+            $(MERLIN_PATH)/python $(MERLIN_INFO)/scripts/learn.py -specroot $(MERLIN_WORKSPACE)
         task_queue: simulation_queue
         depends: [combine-outputs]
 

@@ -9,8 +9,6 @@ env:
         MERLIN_PATH: $(WORKSPACE_HOME)/merlin_venv/bin
 
         N_SAMPLES: 10
-        DEBUG: 0
-        SAMPLE_TYPE: 'random'
 
 study:
     - name: setup

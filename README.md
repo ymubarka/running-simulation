@@ -1,3 +1,6 @@
+# TODO
+1. specify concurrency for each worker
+2. split up the spec for the tutorial
 # running-simulation
 Pre-reqs:
 1. Docker

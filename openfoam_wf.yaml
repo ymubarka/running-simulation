@@ -10,7 +10,10 @@ env:
         OUTPUT_PATH: ./openfoam_wf_output
 
         SCRIPTS: $(MERLIN_INFO)/scripts
-        N_SAMPLES: 100
+        N_SAMPLES: 10
+        HEIGHT: 1
+        WIDTH: 1
+        RESOLUTION: 20
 
 
 merlin:
@@ -43,7 +46,7 @@ study:
               pip install -r $(SPECROOT)/requirements.txt
 
               # Set up the cavity directory in the MERLIN_INFO directory
-              source $(SCRIPTS)/cavity_setup.sh $(MERLIN_INFO)
+              source $(SCRIPTS)/cavity_setup.sh $(MERLIN_INFO) $(HEIGHT) $(WIDTH) $(RESOLUTION)
 
     - name: sim_runs
       description: |

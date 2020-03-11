@@ -12,8 +12,8 @@ def positive_numbers(x):
 descript = """Using parameters to edit OpenFOAM parameters"""
 parser = argparse.ArgumentParser(description=descript)
 
-parser.add_argument("-x", "--width", type=positive_numbers, default=10, help="length")
-parser.add_argument("-y", "--height", type=positive_numbers, default=10, help="height")
+parser.add_argument("-x", "--width", type=positive_numbers, default=1, help="length")
+parser.add_argument("-y", "--height", type=positive_numbers, default=1, help="height")
 parser.add_argument("-r", "--resolution", type=int, default=20, help="Resolution")
 parser.add_argument("-p", "--piso", type=int, default=0, help="pisoFoam?")
 parser.add_argument("-scripts_dir", help="Name of the scripts directory", default="./")

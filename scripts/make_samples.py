@@ -14,7 +14,7 @@ parser.add_argument("-outfile", help="name of output .npy file", default="sample
 args = parser.parse_args()
 
 N_SAMPLES = args.n
-REYNOLD_RANGE = [1, 100]
+REYNOLD_RANGE = [1, 3000]
 LIDSPEED_RANGE = [0.1, 100]
 BASE = 10
 

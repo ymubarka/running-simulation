@@ -1,5 +1,5 @@
 description:
-    name: openfoam_wf_template
+    name: openfoam_wf
     description: |
       A parameter study that includes initializing, running,
       post-processing, collecting, learning and vizualizing OpenFOAM runs
@@ -10,10 +10,10 @@ env:
         OUTPUT_PATH: ./openfoam_wf_output
 
         SCRIPTS: $(MERLIN_INFO)/scripts
-        N_SAMPLES: 10
+        N_SAMPLES: 100
         HEIGHT: 1
         WIDTH: 1
-        RESOLUTION: 20
+        RESOLUTION: 60
 
 
 merlin:
@@ -69,6 +69,13 @@ study:
               CONTAINER_NAME='OPENFOAM_ICO_$(MERLIN_SAMPLE_ID)'
               docker container run -ti --rm -v $(pwd):/cavity -w /cavity --name=${CONTAINER_NAME} cfdengine/openfoam ./run_openfoam $(LID_SPEED)
               docker wait ${CONTAINER_NAME}
+
+              NUM_OUTDILES=$(ls -ld cavity/*/ | wc -l)
+              if [ $NUM_OUTDILES -ne 14 ]; then
+                  echo "Simulation did not complete"
+                  exit $(MERLIN_SOFT_FAIL)
+              fi
+
           depends: [setup]
           task_queue: simqueue
 

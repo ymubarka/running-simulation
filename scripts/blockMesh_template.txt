@@ -22,10 +22,10 @@ vertices
     (WIDTH 0 0)
     (WIDTH HEIGHT 0)
     (0 HEIGHT 0)
-    (0 0 0.1)
-    (WIDTH 0 0.1)
-    (WIDTH HEIGHT 0.1)
-    (0 HEIGHT 0.1)
+    (0 0 0.01)
+    (WIDTH 0 0.01)
+    (WIDTH HEIGHT 0.01)
+    (0 HEIGHT 0.01)
 );
 
 blocks
